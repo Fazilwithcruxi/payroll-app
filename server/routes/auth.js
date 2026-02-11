@@ -13,6 +13,7 @@ router.post('/register', async (req, res) => {
             'INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING *',
             [username, hashedPassword, email]
         );
+        console.log(`User registered successfully with id: ${newUser.rows[0].id}`);
         res.json(newUser.rows[0]);
     } catch (err) {
         console.error(err.message);
