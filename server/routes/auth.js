@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 router.post('/register', async (req, res) => {
     try {
         const { username, password, email } = req.body;
+        console.log(`Register API called for username: ${username}`);
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await pool.query(
             'INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING *',
