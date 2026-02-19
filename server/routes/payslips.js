@@ -23,40 +23,24 @@ router.post('/generate', async (req, res) => {
         const special_allowance = parseFloat(emp.special_allowance);
         const professional_tax = parseFloat(emp.professional_tax);
 
-        // Simple pro-rata calculation if needed, but per requirement, we might just store what's given or calculate
-        // For now, let's assume the allowances are fixed monthly, and we might adjust basic based on LOP?
-        // Or usually allowances are also pro-rated.
-        // Let's implement a standard pro-rata logic based on 30/31 days or just use the provided net_paid_days?
-        // Requirement 1.2 says: "When HR selects particular month and year, payslip should be generated"
-        // The image shows "Standard Days: 31", "Net Paid Days: 31".
-        // Use net_paid_days / standard_days ratio?
-        // For simplicity in MVP: Assume full output unless LOP is specified.
+        // Calculate Full Monthly Gross
+        const full_monthly_gross = basic_salary + hra + internet_allowance + meal_card + special_allowance;
 
-        // Image shows:
-        // Basic: 17550
-        // HRA: 8775
-        // Internet: 833
-        // Meal: 2200
-        // Special: 9642
-        // Leave Encashment: 8761 (This seems like a one-off or specific field. I'll ignore for general calc unless added to employee)
+        // LOP Deduction Formula: (Gross / 30) * LOP Days
+        // Check if lop_days is provided
+        const lop = lop_days ? parseFloat(lop_days) : 0;
+        let deduction = 0;
+        if (lop > 0) {
+            deduction = (full_monthly_gross / 30) * lop;
+        }
 
-        const gross_earnings = basic_salary + hra + internet_allowance + meal_card + special_allowance;
-        // Note: Logic for Leave Encashment is not in generic employee table yet.
+        const gross_earnings = Math.max(0, full_monthly_gross - deduction);
 
         // Calculate Income Tax (New Regime FY 2025-26)
-        // Slabs:
-        // 0-3L: Nil
-        // 3-7L: 5%
-        // 7-10L: 10%
-        // 10-12L: 15%
-        // 12-15L: 20%
-        // >15L: 30%
-        // Std Deduction: 75000 (New regime default usually, check specific budget, but standard is 50k -> 75k allowed in some contexts, stick to 75k as per user ref to "Finance Minister")
-
+        // Using annual package for projection
         let annual_income = parseFloat(emp.annual_package) || 0;
-        // If annual_package is not set, use monthly gross * 12 as fallback estimate
         if (annual_income === 0) {
-            annual_income = gross_earnings * 12;
+            annual_income = full_monthly_gross * 12;
         }
 
         const standard_deduction = 75000;
@@ -104,26 +88,57 @@ router.post('/generate', async (req, res) => {
             [employee_id_db, month, year]
         );
 
+        // Ensure we handle missing values
+        const sick_leave_val = req.body.sick_leave ? parseInt(req.body.sick_leave) : 0;
+        const paid_leave_val = req.body.paid_leave ? parseInt(req.body.paid_leave) : 0;
+
         let result;
         if (check.rows.length > 0) {
             // Update
             result = await pool.query(
                 `UPDATE payslips SET 
-                    net_paid_days = $1, lop_days = $2, gross_earnings = $3, total_deductions = $4, net_pay = $5, income_tax = $6, generated_at = CURRENT_TIMESTAMP
-                WHERE employee_id = $7 AND month = $8 AND year = $9 RETURNING *`,
-                [net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax, employee_id_db, month, year]
+                    net_paid_days = $1, lop_days = $2, gross_earnings = $3, total_deductions = $4, net_pay = $5, income_tax = $6, 
+                    sick_leave = $7, paid_leave = $8, generated_at = CURRENT_TIMESTAMP
+                WHERE employee_id = $9 AND month = $10 AND year = $11 RETURNING *`,
+                [net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax,
+                    sick_leave_val, paid_leave_val,
+                    employee_id_db, month, year]
             );
         } else {
             // Insert
             result = await pool.query(
                 `INSERT INTO payslips (
-                    employee_id, month, year, net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-                [employee_id_db, month, year, net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax]
+                    employee_id, month, year, net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax, sick_leave, paid_leave
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+                [employee_id_db, month, year, net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax, sick_leave_val, paid_leave_val]
             );
         }
 
-        res.json(result.rows[0]);
+        // Calculate Available Leaves
+        // 1. Get total used
+        const usageResult = await pool.query(
+            'SELECT SUM(sick_leave) as total_sick, SUM(paid_leave) as total_paid FROM payslips WHERE employee_id = $1',
+            [employee_id_db]
+        );
+        const total_sick_used = parseInt(usageResult.rows[0].total_sick || 0);
+        const total_paid_used = parseInt(usageResult.rows[0].total_paid || 0);
+
+        // 2. Get quotas (defaults to 12 if null, based on schema update)
+        // We already fetched 'emp' at the start, lets check if it has quota columns (it might not if cached, but it's a new query)
+        // Re-fetching or just assuming defaults if not present in 'emp' object (if 'SELECT *' was used, it should be there)
+        const sick_quota = emp.sick_leave_quota || 12;
+        const paid_quota = emp.paid_leave_quota || 12;
+
+        const available_sick_leave = Math.max(0, sick_quota - total_sick_used);
+        const available_paid_leave = Math.max(0, paid_quota - total_paid_used);
+
+        res.json({
+            ...result.rows[0],
+            lop_deduction: deduction,
+            full_gross: full_monthly_gross,
+            available_sick_leave,
+            available_paid_leave
+        });
 
     } catch (err) {
         console.error(err.message);

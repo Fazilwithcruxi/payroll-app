@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Folder Back -->
+  <path d="M40 120H200L240 160H472V440H40V120Z" fill="#0ea5e9"/>
+  
+  <!-- Content/Paper -->
+  <rect x="60" y="100" width="300" height="300" rx="4" fill="#f8fafc" transform="rotate(-5 210 250)"/>
+  
+  <!-- Folder Front -->
+  <path d="M40 440V280L80 200H472L432 440H40Z" fill="#0284c7"/>
+  
+  <!-- Gears (White) -->
+  <g transform="translate(180, 300)">
+    <circle cx="0" cy="0" r="40" stroke="white" stroke-width="12" fill="none"/>
+    <path d="M-50 0H50 M0 -50V50 M-35 -35L35 35 M-35 35L35 -35" stroke="white" stroke-width="12"/>
+    <circle cx="0" cy="0" r="15" fill="white"/>
+  </g>
+  <g transform="translate(260, 240) scale(0.6)">
+    <circle cx="0" cy="0" r="40" stroke="white" stroke-width="12" fill="none"/>
+    <path d="M-50 0H50 M0 -50V50 M-35 -35L35 35 M-35 35L35 -35" stroke="white" stroke-width="12"/>
+    <circle cx="0" cy="0" r="15" fill="white"/>
+  </g>
+
+  <!-- Orange Arrow -->
+  <path d="M300 480C300 480 450 450 480 150" stroke="#f97316" stroke-width="40" stroke-linecap="round" fill="none"/>
+  <path d="M480 150L440 200M480 150L520 210" stroke="#f97316" stroke-width="40" stroke-linecap="round"/>
+  
+  <!-- Floating Pixels -->
+  <rect x="150" y="80" width="30" height="30" fill="#22d3ee" opacity="0.8"/>
+  <rect x="220" y="50" width="20" height="20" fill="#f97316" opacity="0.8"/>
+  <rect x="400" y="100" width="25" height="25" fill="#22d3ee" opacity="0.8"/>
+</svg>

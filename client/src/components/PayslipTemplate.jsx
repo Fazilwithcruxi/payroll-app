@@ -1,10 +1,23 @@
 import React from 'react';
 
 const PayslipTemplate = ({ data }) => {
-    const { employee, month, year, net_paid_days, lop_days, gross_earnings, total_deductions, net_pay, income_tax } = data;
+    const {
+        employee, month, year, net_paid_days, lop_days,
+        gross_earnings, total_deductions, net_pay, income_tax,
+        sick_leave = 0, paid_leave = 0, lop_deduction = 0, full_gross
+    } = data;
 
     // Helper to format currency
     const fmt = (n) => Number(n).toFixed(2);
+
+    // Calculate display values
+    // DB 'gross_earnings' is (Full - LOP).
+    // To show Full Gross in Earnings column sum, we use full_gross or reconstruct it.
+    const displayGross = full_gross || (parseFloat(gross_earnings) + parseFloat(lop_deduction));
+
+    // DB 'total_deductions' is (Tax + PT). 
+    // We want to show LOP as a deduction, so we add it.
+    const displayTotalDeductions = parseFloat(total_deductions) + parseFloat(lop_deduction);
 
     return (
         <div style={{
@@ -14,7 +27,7 @@ const PayslipTemplate = ({ data }) => {
             maxWidth: '800px',
             margin: '0 auto',
             fontFamily: 'serif',
-            color: 'black' // Ensure text is black for printing/viewing in dark mode
+            color: 'black'
         }}>
             <style>{`
                 .payslip-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -26,36 +39,37 @@ const PayslipTemplate = ({ data }) => {
             `}</style>
 
             <div className="header-row">
-                Pay slip for the month of {month}'{String(year).slice(-2)}
+                Pay slip for the month of {month} {year}
             </div>
 
             <table className="payslip-table">
                 <tbody>
                     <tr>
                         <td style={{ width: '50%' }}>
-                            <div><strong>Employee Id number:</strong> {employee.employee_id}</div>
-                            <div><strong>Employee name:</strong> {employee.name}</div>
+                            <div><strong>Employee Id:</strong> {employee.employee_id}</div>
+                            <div><strong>Name:</strong> {employee.name}</div>
                             <div><strong>Designation:</strong> {employee.designation}</div>
-                            <div><strong>Date of joining:</strong> {new Date(employee.doj).toLocaleDateString()}</div>
+                            <div><strong>DOJ:</strong> {new Date(employee.doj).toLocaleDateString()}</div>
                             <div><strong>Gender:</strong> {employee.gender}</div>
                             {employee.annual_package > 0 && <div><strong>Annual Package:</strong> {fmt(employee.annual_package)}</div>}
                         </td>
                         <td style={{ width: '50%' }}>
                             <div><strong>Payment Mode:</strong> {employee.payment_mode}</div>
-                            <div><strong>Bank A/c no:</strong> {employee.bank_account_no}</div>
-                            <div><strong>IFSC Code:</strong> {employee.ifsc_code}</div>
+                            <div><strong>Bank A/c:</strong> {employee.bank_account_no}</div>
+                            <div><strong>IFSC:</strong> {employee.ifsc_code}</div>
                             <div><strong>PAN:</strong> {employee.pan}</div>
                         </td>
                     </tr>
 
                     <tr>
                         <td style={{ borderBottom: '2px solid black' }}>
-                            <div><strong>Standard Days :</strong> 31</div>
+                            <div><strong>Standard Days :</strong> {new Date(year, ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(month) + 1, 0).getDate()}</div>
                             <div><strong>Net Paid Days :</strong> {net_paid_days}</div>
                         </td>
                         <td style={{ borderBottom: '2px solid black' }}>
-                            <div><strong>LOP days :</strong> {lop_days}</div>
-                            <div><strong>Available Leaves :</strong> 0</div>
+                            <div><strong>LOP Days :</strong> {lop_days}</div>
+                            <div><strong>Leaves Taken :</strong> Sick: {sick_leave}, Paid: {paid_leave}</div>
+                            <div><strong>Available :</strong> Sick: {data.available_sick_leave || 0}, Paid: {data.available_paid_leave || 0}</div>
                         </td>
                     </tr>
                 </tbody>
@@ -87,17 +101,17 @@ const PayslipTemplate = ({ data }) => {
                     </tr>
                     <tr className="no-border-bottom no-border-top">
                         <td>Special allowance <span style={{ float: 'right' }}>{fmt(employee.special_allowance)}</span></td>
-                        <td>LOP <span style={{ float: 'right' }}>0.00</span></td>
+                        <td>LOP Deduction <span style={{ float: 'right' }}>{fmt(lop_deduction)}</span></td>
                     </tr>
-                    {/* Spacer rows if needed to match height */}
+                    {/* Spacer rows */}
                     <tr className="no-border-top">
                         <td style={{ height: '30px' }}></td>
                         <td></td>
                     </tr>
 
                     <tr style={{ fontWeight: 'bold', borderTop: '2px solid black' }}>
-                        <td>Gross earnings <span style={{ float: 'right' }}>{fmt(gross_earnings)}</span></td>
-                        <td>Total deductions <span style={{ float: 'right' }}>{fmt(total_deductions)}</span></td>
+                        <td>Gross Earnings <span style={{ float: 'right' }}>{fmt(displayGross)}</span></td>
+                        <td>Total Deductions <span style={{ float: 'right' }}>{fmt(displayTotalDeductions)}</span></td>
                     </tr>
                 </tbody>
             </table>

@@ -1,6 +1,7 @@
-import React, { useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useContext, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -13,7 +14,16 @@ const PrivateRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" />;
 };
 
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+const LocationTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    // Save path if it's not a restricted/auth path
+    if (!['/login', '/register', '/'].includes(location.pathname)) {
+      localStorage.setItem('lastPath', location.pathname);
+    }
+  }, [location]);
+  return null;
+};
 
 const AppContent = () => {
   const { theme, toggleTheme } = useTheme();
@@ -25,6 +35,7 @@ const AppContent = () => {
         </button>
       </div>
       <Router>
+        <LocationTracker />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

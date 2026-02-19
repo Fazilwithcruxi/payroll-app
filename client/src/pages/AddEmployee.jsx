@@ -36,26 +36,70 @@ const AddEmployee = () => {
         };
     };
 
+    // Load saved data on mount
+    React.useEffect(() => {
+        const saved = localStorage.getItem('addEmployeeForm');
+        if (saved) {
+            try {
+                setFormData(JSON.parse(saved));
+            } catch (e) {
+                console.error("Failed to parse saved form data", e);
+            }
+        }
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
+        let newFormData = { ...formData };
 
         if (name === 'annual_package') {
             const split = calculateSplit(parseFloat(value));
-            setFormData(prev => ({
-                ...prev,
-                [name]: value,
-                ...split
-            }));
+            newFormData = { ...newFormData, [name]: value, ...split };
+        } else if (name === 'employee_id') {
+            let newVal = value.toUpperCase();
+            newFormData = { ...newFormData, [name]: newVal };
+        } else if (name === 'pan' || name === 'ifsc_code') {
+            newFormData = { ...newFormData, [name]: value.toUpperCase() };
         } else {
-            setFormData({ ...formData, [name]: value });
+            newFormData = { ...newFormData, [name]: value };
         }
+
+        setFormData(newFormData);
+        localStorage.setItem('addEmployeeForm', JSON.stringify(newFormData));
+    };
+
+    const validateForm = () => {
+        // Employee ID Validation
+        if (!formData.employee_id.startsWith('ODIN')) {
+            alert('Employee ID must start with "ODIN"');
+            return false;
+        }
+
+        // PAN Validation
+        const panRegex = /[A-Z]{5}[0-9]{4}[A-Z]{1}/;
+        if (!panRegex.test(formData.pan)) {
+            alert('Invalid PAN Number format (e.g., ABCDE1234F)');
+            return false;
+        }
+
+        // IFSC Validation
+        const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+        if (!ifscRegex.test(formData.ifsc_code)) {
+            alert('Invalid IFSC Code format (e.g., SBIN0123456)');
+            return false;
+        }
+
+        return true;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
+
         try {
             await api.post('/employees', formData);
             alert('Employee Added Successfully');
+            localStorage.removeItem('addEmployeeForm'); // Clear saved data
             navigate('/dashboard');
         } catch (err) {
             console.error(err);
@@ -73,7 +117,7 @@ const AddEmployee = () => {
                     <div>
                         <h3>Personal Details</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input name="employee_id" placeholder="Employee ID (e.g. OPL7)" onChange={handleChange} required />
+                            <input name="employee_id" placeholder="Employee ID (starts with ODIN)" value={formData.employee_id} onChange={handleChange} required />
                             <input name="name" placeholder="Full Name" onChange={handleChange} required />
                             <input name="designation" placeholder="Designation" onChange={handleChange} required />
                             <input type="date" name="doj" placeholder="Date of Joining" onChange={handleChange} required />
@@ -95,8 +139,8 @@ const AddEmployee = () => {
                                 <option value="Cash">Cash</option>
                             </select>
                             <input name="bank_account_no" placeholder="Bank Account No" onChange={handleChange} required />
-                            <input name="ifsc_code" placeholder="IFSC Code" onChange={handleChange} required />
-                            <input name="pan" placeholder="PAN Number" onChange={handleChange} required />
+                            <input name="ifsc_code" placeholder="IFSC Code (e.g. SBIN0123456)" value={formData.ifsc_code} onChange={handleChange} required />
+                            <input name="pan" placeholder="PAN Number (e.g. ABCDE1234F)" value={formData.pan} onChange={handleChange} required />
                         </div>
                     </div>
 
