@@ -1,4 +1,5 @@
 import React from 'react';
+import logo from '../assets/file.svg';
 
 const PayslipTemplate = ({ data }) => {
     const {
@@ -11,16 +12,11 @@ const PayslipTemplate = ({ data }) => {
     const fmt = (n) => Number(n).toFixed(2);
 
     // Calculate display values
-    // DB 'gross_earnings' is (Full - LOP).
-    // To show Full Gross in Earnings column sum, we use full_gross or reconstruct it.
     const displayGross = full_gross || (parseFloat(gross_earnings) + parseFloat(lop_deduction));
-
-    // DB 'total_deductions' is (Tax + PT). 
-    // We want to show LOP as a deduction, so we add it.
     const displayTotalDeductions = parseFloat(total_deductions) + parseFloat(lop_deduction);
 
     return (
-        <div style={{
+        <div className="printable-payslip" style={{
             background: 'white',
             padding: '20px',
             border: '2px solid black',
@@ -30,13 +26,35 @@ const PayslipTemplate = ({ data }) => {
             color: 'black'
         }}>
             <style>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    .printable-payslip, .printable-payslip * { visibility: visible; }
+                    .printable-payslip {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        border: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    .btn, .header, .card:not(.printable-payslip) { display: none !important; }
+                }
                 .payslip-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                 .payslip-table th, .payslip-table td { border: 1px solid black; padding: 5px; vertical-align: top; color: black; }
                 .header-row { background-color: #ffe4cd; text-align: center; font-weight: bold; padding: 10px; border-bottom: 2px solid black; color: black; }
+                .company-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 10px; }
+                .company-logo { height: 50px; }
+                .company-name { font-size: 24px; font-weight: bold; text-transform: uppercase; }
                 .section-header { font-weight: bold; border-bottom: 2px solid black; }
                 .no-border-bottom td { border-bottom: none; }
                 .no-border-top td { border-top: none; }
             `}</style>
+
+            <div className="company-header">
+                <img src={logo} alt="Oden Kirk" className="company-logo" />
+                <div className="company-name">Oden Kirk</div>
+            </div>
 
             <div className="header-row">
                 Pay slip for the month of {month} {year}

@@ -48,8 +48,30 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const sendOtp = async (username) => {
+        try {
+            const response = await api.post('/auth/send-otp', { username });
+            return { success: true, otp: response.data.otp }; // Return OTP in dev for easy access
+        } catch (error) {
+            return { success: false, message: error.response?.data?.message || "Failed to send OTP" };
+        }
+    };
+
+    const verifyOtp = async (username, otp) => {
+        try {
+            const response = await api.post('/auth/verify-otp', { username, otp });
+            const { token, user } = response.data;
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            setUser(user);
+            return { success: true };
+        } catch (error) {
+            return { success: false, message: error.response?.data?.message || "Verification failed" };
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, sendOtp, verifyOtp, loading }}>
             {children}
         </AuthContext.Provider>
     );
