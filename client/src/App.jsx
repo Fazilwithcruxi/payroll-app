@@ -34,7 +34,7 @@ const AppContent = () => {
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
       </div>
-      <Router>
+      <Router basename="/payroll-app/">
         <LocationTracker />
         <Routes>
           <Route path="/login" element={<Login />} />
