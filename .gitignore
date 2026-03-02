@@ -9,6 +9,7 @@ yarn-debug.log*
 yarn-error.log*
 .idea/
 .vscode/
+
 client/dist/
 server/dist/
 server/current_otp.txt
