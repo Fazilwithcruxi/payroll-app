@@ -17,8 +17,8 @@ const Sidebar = () => {
     return (
         <div className="sidebar">
             <div className="sidebar-header">
-                <img src={logo} alt="Odenkirk" className="sidebar-logo" />
-                <h2 className="sidebar-title">Odenkirk</h2>
+                <img src={logo} alt="Payroll System" className="sidebar-logo" />
+                <h2 className="sidebar-title">Payroll System</h2>
             </div>
 
             <div className="sidebar-menu">

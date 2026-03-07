@@ -37,8 +37,7 @@ const Register = () => {
             {/* Left Panel - Branding */}
             <div className="auth-left animate-slide-in">
                 <div className="brand-content">
-                    <img src={logo} alt="Odenkirk Logo" className="brand-logo" />
-                    <h1 className="brand-title">Odenkirk</h1>
+                    <h1 className="brand-title">Payroll System</h1>
                     <p className="brand-description">Accounting - Payroll Management App</p>
                 </div>
             </div>
